@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text;
 
 namespace CompressThis
     {
@@ -29,9 +30,32 @@ namespace CompressThis
                     }
                     else
                     {
-                        // Define variables
-                        bool bInputWrite2Log = false;
-                        string sInputLogFileLocation = string.Empty;
+
+                    showMessage("Compress This! <<< \u00a9 HighCroft Media 2008 >>>");
+
+                    // If the target compression folder contains a trailing backslash. This needs to be removed and the remaining string allocated to the correct args.
+                    if (args[1].Contains("\""))
+                    {
+                        // Pass a warning message. 
+                        showMessage("Incorrect backslash in parameter 2. Attempting to resolve....", true);
+
+                        string[] arg1inputs;
+                        arg1inputs = args[1].Split(new char[] { ' ' });
+
+                        args[1] = (arg1inputs[0].Trim().EndsWith("\"")) ? arg1inputs[0].Remove(arg1inputs[0].Trim().Length - 1) : arg1inputs[0].Trim();
+
+                        // If the args1inputs array has more than one element, other parameters have been specified.
+                        if (arg1inputs.Length > 1)
+                        {
+                            Array.Resize(ref args, 4);
+                            args[2] = (arg1inputs[1].Trim().EndsWith("\"")) ? arg1inputs[1].Remove(arg1inputs[1].Trim().Length - 1) : arg1inputs[1].Trim();
+                            args[3] = (arg1inputs[2].Trim().EndsWith("\"")) ? arg1inputs[2].Remove(arg1inputs[2].Trim().Length - 1) : arg1inputs[2].Trim();
+                        }
+                        showMessage("Successfully resolved error in parameter 2....");
+                    }
+
+                    // Define variables
+                    bool bInputWrite2Log = false;
 
                         // Capture the command parameters
                         if (args.Length > 2)    // The log file parameters have been specified
@@ -43,20 +67,23 @@ namespace CompressThis
                                 showMessage("Incorrect argument specified for parameter 3 (Expected: [Null]/True/False)");
                             }
 
-                        // Check to see if the log file location is set, populate if found (adding a trailing backslash if missing)
-                        if (!string.IsNullOrEmpty(args[3]))
-                        {
-                            sInputLogFileLocation = args[3].EndsWith(@"\") ? args[3] : args[3] + @"\";
-                        }                        
+                            // Check to see if the log file location is set, populate variable if found.
+                            if (!string.IsNullOrEmpty(args[3]))
+                            {
+                                // If a quote is found at the end of the line, this indicates a backslash where not expected (It is escaping the quote). Remove the quote.
+                                args[3] = (args[3].EndsWith("\"")) ? args[3].Remove(args[3].Length - 1) : args[3];
+                                // Populate variable from parameter.
+                                sLogFileLocation = (args[3].EndsWith("\\")) ? args[3] : args[3] += "\\";
+                            }
                     }
 
-                        // Write the parameters to variables for use in the application
+                    // Write the parameters to variables for use in the application
                         sArchiveName = args[0].ToString();
                         bWrite2LogFile = bInputWrite2Log;
-                        sLogFileLocation = sInputLogFileLocation;
-
-                        // Manage the compress activities.
-                        sArchiveSources = args[1].ToString();
+                    
+                    // Manage the compression activities.
+                    //-------------------------------------------->>>
+                    sArchiveSources = args[1].ToString();
 
                         // Log start of the compression
                         Log2File("Starting Compresion Utility to generate " + sArchiveName + ". Contents Reqd: " + sArchiveSources);
@@ -222,7 +249,7 @@ namespace CompressThis
             {
                 if (IsError)
                 {
-                    sMsg = "Error! - Error Message: " + sMsg;
+                    sMsg = "Error! : " + sMsg;
                 }
                 Console.WriteLine(sMsg);
                 Log2File(sMsg);
@@ -252,23 +279,25 @@ namespace CompressThis
                 using (StreamWriter swLog =
                     new StreamWriter(sLogFileName, true))
                         {
+                            StringBuilder sbHeader = new StringBuilder();
+                            
                             // If the log file is newly created, add a header.
                             if (!isExists)
-                            {
-                                swLog.WriteLine("<<<----------------------------------------------------------------------->>>");
-                                swLog.WriteLine("<<<------ Command Line Compression Utility (2018) ------>>>");
-                                swLog.WriteLine("<<<----------------------------------------------------------------------->>>");
-                                swLog.WriteLine("<<<  Log File                                                                               >>>");
-                                swLog.WriteLine("<<<----------------------------------------------------------------------->>>");
+                            {   
+                                sbHeader.AppendLine("<<<----------------------------------------------------------------------->>>");
+                                sbHeader.AppendLine("<<<------  CompressThis! - Command Line Compression Utility (2018)  ------>>>");
+                                sbHeader.AppendLine("<<<----------------------------------------------------------------------->>>");
+                                sbHeader.AppendLine("<<<  Log File                                                             >>>");
+                                sbHeader.AppendLine("<<<----------------------------------------------------------------------->>>");
                             }
                             else
                             {
-                                // Write to the file
-                                swLog.WriteLine(DateTime.Now);
-                                swLog.WriteLine(sMsg);
-                                swLog.WriteLine();
+                        // Write to the file
+                                sbHeader.AppendLine(DateTime.Now.ToString());
+                                sbHeader.AppendLine(sMsg);
                             }
-                        }
+                    swLog.WriteLine(sbHeader);
+                }
                 }
             }
 
